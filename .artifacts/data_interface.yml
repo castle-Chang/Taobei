@@ -1,0 +1,54 @@
+# 数据库操作接口库
+# 用于管理用户登录和注册相关的数据库操作
+
+- type: Database
+  id: DB-FindUserByPhone
+  description: 根据手机号查找用户记录，用于验证用户是否已注册。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 根据提供的手机号在users表中查找对应的用户记录
+    - 如果找到用户，返回用户信息
+    - 如果未找到用户，返回空结果
+  changeLog:
+    - date: "2025-01-13"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-CreateUser
+  description: 在数据库中创建一个新的用户记录。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 成功执行后，users表中会增加一条新记录
+    - 如果手机号已存在，操作应失败并抛出唯一性约束错误
+    - 新用户记录包含手机号、创建时间等基本信息
+  changeLog:
+    - date: "2025-01-13"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-SaveVerificationCode
+  description: 保存验证码到数据库，包含手机号、验证码和过期时间。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 成功保存验证码记录到verification_codes表
+    - 记录包含手机号、6位验证码、创建时间和60秒有效期
+    - 如果该手机号已有未过期的验证码，应更新现有记录
+  changeLog:
+    - date: "2025-01-13"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-VerifyCode
+  description: 验证手机号对应的验证码是否正确且未过期。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 根据手机号和验证码查找verification_codes表中的记录
+    - 验证验证码是否匹配且在60秒有效期内
+    - 验证成功后应删除或标记该验证码记录为已使用
+  changeLog:
+    - date: "2025-01-13"
+      description: "初始创建。"
