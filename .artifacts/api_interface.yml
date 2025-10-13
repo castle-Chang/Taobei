@@ -32,44 +32,52 @@
 - type: Backend
   id: API-POST-Login
   route: POST /api/auth/login
-  description: 处理用户登录请求，验证手机号和验证码。
+  description: 处理用户登录请求，支持验证码或密码登录。
   input:
     type: JSON
     body:
       phoneNumber: string
-      verificationCode: string
+      loginType: string # "code" 或 "password"
+      verificationCode?: string # 当 loginType 为 "code" 时必填
+      password?: string # 当 loginType 为 "password" 时必填
   output:
     success:
       statusCode: 200
       body: { message: "登录成功", userId: "uuid", token: "jwt" }
     error:
       - statusCode: 400
-        body: { error: "请输入正确的手机号码和验证码" }
+        body: { error: "请输入正确的手机号码和验证码/密码" }
       - statusCode: 401
-        body: { error: "验证码错误" }
+        body: { error: "验证码/密码错误" }
       - statusCode: 404
         body: { error: "该手机号未注册，请先完成注册" }
   dependencies:
     - DB-FindUserByPhone
     - DB-VerifyCode
+    - DB-VerifyPassword
   acceptanceCriteria:
     - 验证手机号格式是否正确
     - 检查用户是否已注册
-    - 验证验证码是否正确且未过期
+    - 根据loginType验证验证码或密码是否正确
+    - 验证码登录时验证验证码是否未过期
+    - 密码登录时验证密码是否匹配
     - 登录成功后返回用户ID和JWT令牌
   changeLog:
     - date: "2025-01-13"
       description: "初始创建。"
+    - date: "2025-01-14"
+      description: "添加密码登录支持。"
 
 - type: Backend
   id: API-POST-Register
   route: POST /api/auth/register
-  description: 处理用户注册请求，包含验证码校验和用户创建。
+  description: 处理用户注册请求，包含验证码校验、密码设置和用户创建。
   input:
     type: JSON
     body:
       phoneNumber: string
       verificationCode: string
+      password: string
       agreeToTerms: boolean
   output:
     success:
@@ -77,7 +85,7 @@
       body: { message: "注册成功", userId: "uuid", token: "jwt" }
     error:
       - statusCode: 400
-        body: { error: "请输入正确的手机号码和验证码" }
+        body: { error: "请输入正确的手机号码、验证码和密码" }
       - statusCode: 401
         body: { error: "验证码错误" }
       - statusCode: 409
@@ -86,12 +94,14 @@
     - DB-FindUserByPhone
     - DB-VerifyCode
     - DB-CreateUser
+    - DB-HashPassword
   acceptanceCriteria:
     - 验证手机号格式是否正确
     - 验证用户是否同意用户协议
     - 验证验证码是否正确且未过期
+    - 验证密码是否符合安全要求（至少8位，包含字母和数字）
     - 如果手机号已注册，直接登录并返回409状态码
-    - 如果手机号未注册，创建新用户并返回201状态码
+    - 如果手机号未注册，创建新用户（密码需要加密存储）并返回201状态码
   changeLog:
     - date: "2025-01-13"
       description: "初始创建。"

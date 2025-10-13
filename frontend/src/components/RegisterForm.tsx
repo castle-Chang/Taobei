@@ -8,6 +8,7 @@ interface RegisterFormProps {
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNavigateToLogin }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
+  const [password, setPassword] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,8 +28,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNaviga
 
   // 验证手机号格式
   const validatePhoneNumber = (phone: string): boolean => {
-    const phoneRegex = /^1[3-9]\d{9}$/;
-    return phoneRegex.test(phone);
+    return phone.length === 11;
   };
 
   const handleSendCode = async () => {
@@ -59,6 +59,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNaviga
     }
   };
 
+  // 验证密码强度
+  const validatePassword = (pwd: string): boolean => {
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    return passwordRegex.test(pwd);
+  };
+
   const handleRegister = async () => {
     setError('');
     setIsLoading(true);
@@ -75,6 +81,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNaviga
       return;
     }
 
+    if (!password) {
+      setError('请输入密码');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      setError('密码必须至少8位，包含字母和数字');
+      setIsLoading(false);
+      return;
+    }
+
     if (!agreeToTerms) {
       setError('请同意用户协议');
       setIsLoading(false);
@@ -87,7 +105,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNaviga
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phoneNumber,
-          verificationCode
+          verificationCode,
+          password,
+          agreeToTerms
         })
       });
 
@@ -170,22 +190,41 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNaviga
           {countdown > 0 ? `${countdown}秒后重试` : '获取验证码'}
         </button>
       </div>
+
+      <div style={{ marginBottom: '15px' }}>
+        <input
+          type="password"
+          placeholder="请设置登录密码（至少8位，包含字母和数字）"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '16px',
+            boxSizing: 'border-box'
+          }}
+        />
+      </div>
       
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+      <div style={{ 
+        marginBottom: '15px',
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        <input
+          type="checkbox"
+          checked={agreeToTerms}
+          onChange={(e) => setAgreeToTerms(e.target.checked)}
+          style={{ marginRight: '8px' }}
+        />
+        <span style={{ 
           fontSize: '14px',
           color: '#666'
         }}>
-          <input
-            type="checkbox"
-            checked={agreeToTerms}
-            onChange={(e) => setAgreeToTerms(e.target.checked)}
-            style={{ marginRight: '8px' }}
-          />
           同意《淘贝用户协议》
-        </label>
+        </span>
       </div>
       
       {error && (
@@ -211,13 +250,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNaviga
           borderRadius: '4px',
           fontSize: '16px',
           cursor: (isLoading || !agreeToTerms) ? 'not-allowed' : 'pointer',
-          marginBottom: '15px'
+          marginBottom: '15px',
+          transition: 'background-color 0.3s'
         }}
       >
         {isLoading ? '注册中...' : '注册'}
       </button>
 
-      <div style={{ textAlign: 'center' }}>
+      <div style={{ 
+        textAlign: 'center',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
         <span style={{ color: '#666', fontSize: '14px' }}>已有账号？</span>
         <button
           onClick={onNavigateToLogin}
@@ -227,7 +273,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNaviga
             color: '#ff6900',
             cursor: 'pointer',
             fontSize: '14px',
-            textDecoration: 'underline'
+            padding: '0',
+            textDecoration: 'none',
+            transition: 'color 0.3s'
           }}
         >
           立即登录

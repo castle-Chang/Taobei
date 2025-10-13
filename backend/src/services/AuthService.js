@@ -1,8 +1,41 @@
 const User = require('../models/User');
 const VerificationCode = require('../models/VerificationCode');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 class AuthService {
+  /**
+   * 验证密码强度
+   * @param {string} password 
+   * @returns {boolean}
+   */
+  static validatePassword(password) {
+    if (!password || typeof password !== 'string') {
+      return false;
+    }
+    // 密码至少8位，包含字母和数字
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    return passwordRegex.test(password);
+  }
+
+  /**
+   * 加密密码
+   * @param {string} password 
+   * @returns {Promise<string>}
+   */
+  static async hashPassword(password) {
+    return bcrypt.hash(password, 10);
+  }
+
+  /**
+   * 验证密码
+   * @param {string} password 
+   * @param {string} hashedPassword 
+   * @returns {Promise<boolean>}
+   */
+  static async verifyPassword(password, hashedPassword) {
+    return bcrypt.compare(password, hashedPassword);
+  }
   // 用于存储发送验证码的时间限制
   static sendCodeTimestamps = new Map();
 
@@ -72,10 +105,12 @@ class AuthService {
   /**
    * 用户登录
    * @param {string} phoneNumber 
+   * @param {string} loginType 
    * @param {string} verificationCode 
+   * @param {string} password 
    * @returns {Promise<Object>}
    */
-  static async login(phoneNumber, verificationCode) {
+  static async login(phoneNumber, loginType, verificationCode, password) {
     try {
       // 检查用户是否存在
       const user = await User.findByPhone(phoneNumber);
@@ -86,12 +121,37 @@ class AuthService {
         };
       }
 
-      // 验证验证码
-      const verifyResult = await VerificationCode.verify(phoneNumber, verificationCode);
-      if (!verifyResult.success) {
+      let loginSuccess = false;
+
+      if (loginType === 'code') {
+        // 验证码登录
+        const verifyResult = await VerificationCode.verify(phoneNumber, verificationCode);
+        loginSuccess = verifyResult.success;
+        if (!loginSuccess) {
+          return {
+            success: false,
+            error: '验证码错误或已过期'
+          };
+        }
+      } else if (loginType === 'password') {
+        // 密码登录
+        if (!user.password) {
+          return {
+            success: false,
+            error: '该账号未设置密码，请使用验证码登录'
+          };
+        }
+        loginSuccess = await this.verifyPassword(password, user.password);
+        if (!loginSuccess) {
+          return {
+            success: false,
+            error: '密码错误'
+          };
+        }
+      } else {
         return {
           success: false,
-          error: '验证码错误或已过期'
+          error: '不支持的登录方式'
         };
       }
 
@@ -123,10 +183,11 @@ class AuthService {
    * 用户注册
    * @param {string} phoneNumber 
    * @param {string} verificationCode 
+   * @param {string} password 
    * @param {boolean} agreeToTerms 
    * @returns {Promise<Object>}
    */
-  static async register(phoneNumber, verificationCode, agreeToTerms = true) {
+  static async register(phoneNumber, verificationCode, password, agreeToTerms = true) {
     try {
       // 检查用户是否已存在
       const existingUser = await User.findByPhone(phoneNumber);
@@ -146,8 +207,22 @@ class AuthService {
         };
       }
 
+      // 验证密码强度
+      if (!this.validatePassword(password)) {
+        return {
+          success: false,
+          error: '密码必须至少8位，包含字母和数字'
+        };
+      }
+
+      // 加密密码
+      const hashedPassword = await this.hashPassword(password);
+
       // 创建新用户
-      const user = await User.create({ phoneNumber });
+      const user = await User.create({ 
+        phoneNumber,
+        password: hashedPassword
+      });
 
       // 生成JWT token
       const token = jwt.sign(

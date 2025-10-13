@@ -8,6 +8,8 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onNavigateToRegister }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginType, setLoginType] = useState<'code' | 'password'>('code');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -62,14 +64,21 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onNavigateToRegis
     setError('');
     setIsLoading(true);
 
-    if (!validatePhoneNumber(phoneNumber)) {
+    // 首先检查手机号是否为11位
+    if (phoneNumber.length !== 11) {
       setError('手机号格式不正确');
       setIsLoading(false);
       return;
     }
 
-    if (!verificationCode) {
+    if (loginType === 'code' && !verificationCode) {
       setError('请输入验证码');
+      setIsLoading(false);
+      return;
+    }
+
+    if (loginType === 'password' && !password) {
+      setError('请输入密码');
       setIsLoading(false);
       return;
     }
@@ -80,7 +89,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onNavigateToRegis
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phoneNumber,
-          verificationCode
+          loginType,
+          verificationCode: loginType === 'code' ? verificationCode : undefined,
+          password: loginType === 'password' ? password : undefined
         })
       });
 
@@ -89,7 +100,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onNavigateToRegis
       if (response.ok) {
         onLoginSuccess(data.user, data.token);
       } else {
-        setError(data.error || '登录失败');
+        // 如果手机号是11位但登录失败，说明是密码或验证码错误
+        setError(loginType === 'password' ? '密码错误' : '验证码错误');
       }
     } catch (err) {
       setError('网络错误，请重试');
@@ -99,7 +111,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onNavigateToRegis
   };
 
   // 检查表单是否可以提交
-  const canSubmit = phoneNumber && verificationCode && !isLoading;
+  const canSubmit = phoneNumber && ((loginType === 'code' && verificationCode) || (loginType === 'password' && password)) && !isLoading;
 
   return (
     <div style={{ 
@@ -113,6 +125,42 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onNavigateToRegis
         color: '#ff6900',
         marginBottom: '30px'
       }}>用户登录</h2>
+
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        marginBottom: '20px',
+        gap: '20px'
+      }}>
+        <button
+          onClick={() => setLoginType('code')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: loginType === 'code' ? '#ff6900' : '#fff',
+            color: loginType === 'code' ? '#fff' : '#ff6900',
+            border: '1px solid #ff6900',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          验证码登录
+        </button>
+        <button
+          onClick={() => setLoginType('password')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: loginType === 'password' ? '#ff6900' : '#fff',
+            color: loginType === 'password' ? '#fff' : '#ff6900',
+            border: '1px solid #ff6900',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          密码登录
+        </button>
+      </div>
       
       <div style={{ marginBottom: '15px' }}>
         <input
@@ -131,41 +179,60 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onNavigateToRegis
         />
       </div>
       
-      <div style={{ 
-        marginBottom: '20px', 
-        display: 'flex', 
-        gap: '10px' 
-      }}>
-        <input
-          type="text"
-          placeholder="请输入验证码"
-          value={verificationCode}
-          onChange={(e) => setVerificationCode(e.target.value)}
-          style={{
-            flex: 1,
-            padding: '12px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '16px'
-          }}
-        />
-        <button 
-          onClick={handleSendCode}
-          disabled={!canSendCode || countdown > 0}
-          style={{
-            padding: '12px 16px',
-            backgroundColor: countdown > 0 ? '#ccc' : '#ff6900',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: countdown > 0 ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {countdown > 0 ? `${countdown}秒后重试` : '获取验证码'}
-        </button>
-      </div>
+      {loginType === 'code' ? (
+        <div style={{ 
+          marginBottom: '20px', 
+          display: 'flex', 
+          gap: '10px' 
+        }}>
+          <input
+            type="text"
+            placeholder="请输入验证码"
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }}
+          />
+          <button 
+            onClick={handleSendCode}
+            disabled={!canSendCode || countdown > 0}
+            style={{
+              padding: '12px 16px',
+              backgroundColor: countdown > 0 ? '#ccc' : '#ff6900',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: countdown > 0 ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {countdown > 0 ? `${countdown}秒后重试` : '获取验证码'}
+          </button>
+        </div>
+      ) : (
+        <div style={{ marginBottom: '20px' }}>
+          <input
+            type="password"
+            placeholder="请输入密码"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '16px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+      )}
       
       {error && (
         <div style={{ 
