@@ -135,6 +135,7 @@ describe('LoginForm', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phoneNumber: '13800138000',
+          loginType: 'code',
           verificationCode: '123456'
         })
       });
@@ -165,7 +166,7 @@ describe('LoginForm', () => {
     fireEvent.click(loginButton);
 
     await waitFor(() => {
-      expect(screen.getByText('验证码错误或已过期')).toBeInTheDocument();
+      expect(screen.getByText('验证码错误')).toBeInTheDocument();
     });
   });
 

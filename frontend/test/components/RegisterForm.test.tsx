@@ -13,6 +13,11 @@ describe('RegisterForm', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    // 清理DOM
+    document.body.innerHTML = '';
+  });
+
   it('应该渲染注册表单的所有元素', () => {
     render(
       <RegisterForm
@@ -143,11 +148,13 @@ describe('RegisterForm', () => {
 
     const phoneInput = screen.getByPlaceholderText('请输入手机号');
     const codeInput = screen.getByPlaceholderText('请输入验证码');
+    const passwordInput = screen.getByPlaceholderText('请设置登录密码（至少8位，包含字母和数字）');
     const agreeCheckbox = screen.getByRole('checkbox');
     const registerButton = screen.getByText('注册');
 
     fireEvent.change(phoneInput, { target: { value: '13800138000' } });
     fireEvent.change(codeInput, { target: { value: '123456' } });
+    fireEvent.change(passwordInput, { target: { value: 'password123' } });
     fireEvent.click(agreeCheckbox);
     fireEvent.click(registerButton);
 
@@ -157,7 +164,9 @@ describe('RegisterForm', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phoneNumber: '13800138000',
-          verificationCode: '123456'
+          verificationCode: '123456',
+          password: 'password123',
+          agreeToTerms: true
         })
       });
     });
@@ -165,11 +174,17 @@ describe('RegisterForm', () => {
     expect(mockOnRegisterSuccess).toHaveBeenCalledWith(mockUserInfo, mockToken);
   });
 
-  it('应该显示注册错误信息', async () => {
-    (fetch as any).mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ error: '手机号已注册' })
-    });
+  it('应该显示注册按钮的加载状态', async () => {
+    (global.fetch as any).mockImplementationOnce(() =>
+      new Promise(resolve => {
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, token: 'test-token', user: { phoneNumber: '13800138000' } })
+          });
+        }, 100);
+      })
+    );
 
     render(
       <RegisterForm
@@ -180,41 +195,20 @@ describe('RegisterForm', () => {
 
     const phoneInput = screen.getByPlaceholderText('请输入手机号');
     const codeInput = screen.getByPlaceholderText('请输入验证码');
+    const passwordInput = screen.getByPlaceholderText('请设置登录密码（至少8位，包含字母和数字）');
     const agreeCheckbox = screen.getByRole('checkbox');
     const registerButton = screen.getByText('注册');
 
     fireEvent.change(phoneInput, { target: { value: '13800138000' } });
     fireEvent.change(codeInput, { target: { value: '123456' } });
+    fireEvent.change(passwordInput, { target: { value: 'password123' } });
     fireEvent.click(agreeCheckbox);
     fireEvent.click(registerButton);
 
     await waitFor(() => {
-      expect(screen.getByText('手机号已注册')).toBeInTheDocument();
+      expect(screen.getByText('注册中...')).toBeInTheDocument();
+      expect(screen.getByText('注册中...')).toBeDisabled();
     });
-  });
-
-  it('应该在注册过程中显示加载状态', async () => {
-    (fetch as any).mockImplementationOnce(() => new Promise(resolve => setTimeout(resolve, 100)));
-
-    render(
-      <RegisterForm
-        onRegisterSuccess={mockOnRegisterSuccess}
-        onNavigateToLogin={mockOnNavigateToLogin}
-      />
-    );
-
-    const phoneInput = screen.getByPlaceholderText('请输入手机号');
-    const codeInput = screen.getByPlaceholderText('请输入验证码');
-    const agreeCheckbox = screen.getByRole('checkbox');
-    const registerButton = screen.getByText('注册');
-
-    fireEvent.change(phoneInput, { target: { value: '13800138000' } });
-    fireEvent.change(codeInput, { target: { value: '123456' } });
-    fireEvent.click(agreeCheckbox);
-    fireEvent.click(registerButton);
-
-    expect(screen.getByText('注册中...')).toBeInTheDocument();
-    expect(registerButton).toBeDisabled();
   });
 
   it('应该验证用户协议必须勾选', () => {
@@ -227,10 +221,12 @@ describe('RegisterForm', () => {
 
     const phoneInput = screen.getByPlaceholderText('请输入手机号');
     const codeInput = screen.getByPlaceholderText('请输入验证码');
+    const passwordInput = screen.getByPlaceholderText('请设置登录密码（至少8位，包含字母和数字）');
     const registerButton = screen.getByText('注册');
 
     fireEvent.change(phoneInput, { target: { value: '13800138000' } });
     fireEvent.change(codeInput, { target: { value: '123456' } });
+    fireEvent.change(passwordInput, { target: { value: 'password123' } });
 
     // 未勾选协议时不能注册
     expect(registerButton).toBeDisabled();

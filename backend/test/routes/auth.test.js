@@ -53,6 +53,7 @@ describe('Auth Routes', () => {
         .post('/api/auth/login')
         .send({
           phoneNumber: '13800138000',
+          loginType: 'code',
           verificationCode: '123456'
         });
 
@@ -68,6 +69,7 @@ describe('Auth Routes', () => {
         .post('/api/auth/login')
         .send({
           phoneNumber: '13800138999',
+          loginType: 'code',
           verificationCode: '123456'
         });
 
@@ -80,6 +82,7 @@ describe('Auth Routes', () => {
         .post('/api/auth/login')
         .send({
           phoneNumber: '13800138000',
+          loginType: 'code',
           verificationCode: '000000'
         });
 
@@ -92,6 +95,7 @@ describe('Auth Routes', () => {
         .post('/api/auth/login')
         .send({
           phoneNumber: '123',
+          loginType: 'code',
           verificationCode: '123456'
         });
 
@@ -115,7 +119,8 @@ describe('Auth Routes', () => {
         .post('/api/auth/register')
         .send({
           phoneNumber: '13800138002',
-          verificationCode: '123456'
+          verificationCode: '123456',
+          password: 'password123'
         });
 
       expect(response.status).toBe(201);
@@ -130,7 +135,8 @@ describe('Auth Routes', () => {
         .post('/api/auth/register')
         .send({
           phoneNumber: '13800138000',
-          verificationCode: '123456'
+          verificationCode: '123456',
+          password: 'password123'
         });
 
       expect(response.status).toBe(409);
@@ -142,7 +148,8 @@ describe('Auth Routes', () => {
         .post('/api/auth/register')
         .send({
           phoneNumber: '13800138003',
-          verificationCode: '000000'
+          verificationCode: '000000',
+          password: 'password123'
         });
 
       expect(response.status).toBe(400);
@@ -154,7 +161,8 @@ describe('Auth Routes', () => {
         .post('/api/auth/register')
         .send({
           phoneNumber: '123',
-          verificationCode: '123456'
+          verificationCode: '123456',
+          password: 'password123'
         });
 
       expect(response.status).toBe(400);

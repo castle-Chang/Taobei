@@ -87,8 +87,13 @@ class AuthService {
       // 记录发送时间
       this.sendCodeTimestamps.set(phoneNumber, now);
       
-      // 在实际项目中，这里应该调用短信服务发送验证码
-      console.log(`发送验证码 ${code} 到手机号 ${phoneNumber}`);
+      // 模拟发送验证码 - 在控制台输出验证码
+      console.log('='.repeat(50));
+      console.log(`📱 验证码发送模拟`);
+      console.log(`手机号: ${phoneNumber}`);
+      console.log(`验证码: ${code}`);
+      console.log(`发送时间: ${new Date().toLocaleString()}`);
+      console.log('='.repeat(50));
       
       return {
         success: true,

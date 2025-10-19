@@ -62,7 +62,7 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('应该成功登录已注册用户', async () => {
-      const result = await AuthService.login('13800138000', '123456');
+      const result = await AuthService.login('13800138000', 'code', '123456');
       
       expect(result).toHaveProperty('success', true);
       expect(result).toHaveProperty('token');
@@ -71,14 +71,14 @@ describe('AuthService', () => {
     });
 
     it('应该拒绝未注册的用户', async () => {
-      const result = await AuthService.login('13800138999', '123456');
+      const result = await AuthService.login('13800138999', 'code', '123456');
       
       expect(result).toHaveProperty('success', false);
       expect(result).toHaveProperty('error', '用户不存在');
     });
 
     it('应该拒绝错误的验证码', async () => {
-      const result = await AuthService.login('13800138000', '000000');
+      const result = await AuthService.login('13800138000', 'code', '000000');
       
       expect(result).toHaveProperty('success', false);
       expect(result).toHaveProperty('error', '验证码错误或已过期');
@@ -87,7 +87,7 @@ describe('AuthService', () => {
 
   describe('register', () => {
     it('应该成功注册新用户', async () => {
-      const result = await AuthService.register('13800138002', '123456');
+      const result = await AuthService.register('13800138002', '123456', 'password123');
       
       expect(result).toHaveProperty('success', true);
       expect(result).toHaveProperty('token');
@@ -96,14 +96,14 @@ describe('AuthService', () => {
     });
 
     it('应该拒绝已注册的手机号', async () => {
-      const result = await AuthService.register('13800138000', '123456');
+      const result = await AuthService.register('13800138000', '123456', 'password123');
       
       expect(result).toHaveProperty('success', false);
       expect(result).toHaveProperty('error', '手机号已注册');
     });
 
     it('应该拒绝错误的验证码', async () => {
-      const result = await AuthService.register('13800138003', '000000');
+      const result = await AuthService.register('13800138003', '000000', 'password123');
       
       expect(result).toHaveProperty('success', false);
       expect(result).toHaveProperty('error', '验证码错误或已过期');

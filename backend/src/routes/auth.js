@@ -36,6 +36,12 @@ router.post('/login', async (req, res) => {
   try {
     const { phoneNumber, loginType, verificationCode, password } = req.body;
     
+    // 首先检查手机号格式
+    if (phoneNumber && !AuthService.validatePhoneNumber(phoneNumber)) {
+      return res.status(400).json({ error: '手机号格式不正确' });
+    }
+    
+    // 然后检查必填字段
     if (!phoneNumber || !loginType) {
       return res.status(400).json({ error: '手机号和登录方式不能为空' });
     }
@@ -48,10 +54,6 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: '密码不能为空' });
     }
 
-    if (!AuthService.validatePhoneNumber(phoneNumber)) {
-      return res.status(400).json({ error: '手机号格式不正确' });
-    }
-
     const result = await AuthService.login(phoneNumber, loginType, verificationCode, password);
     
     if (result.success) {
@@ -61,7 +63,7 @@ router.post('/login', async (req, res) => {
       if (result.error === '用户不存在') {
         res.status(404).json(result);
       } else if (result.error.includes('验证码') || result.error.includes('密码')) {
-        res.status(401).json(result);
+        res.status(400).json(result);
       } else {
         res.status(400).json(result);
       }
@@ -76,12 +78,14 @@ router.post('/register', async (req, res) => {
   try {
     const { phoneNumber, verificationCode, password, agreeToTerms } = req.body;
     
+    // 首先检查手机号格式
+    if (phoneNumber && !AuthService.validatePhoneNumber(phoneNumber)) {
+      return res.status(400).json({ error: '手机号格式不正确' });
+    }
+    
+    // 然后检查必填字段
     if (!phoneNumber || !verificationCode || !password) {
       return res.status(400).json({ error: '手机号、验证码和密码不能为空' });
-    }
-
-    if (!AuthService.validatePhoneNumber(phoneNumber)) {
-      return res.status(400).json({ error: '手机号格式不正确' });
     }
 
     if (!AuthService.validatePassword(password)) {
@@ -97,7 +101,7 @@ router.post('/register', async (req, res) => {
       if (result.error === '手机号已注册') {
         res.status(409).json(result);
       } else if (result.error === '验证码错误或已过期') {
-        res.status(401).json(result);
+        res.status(400).json(result);
       } else if (result.error.includes('密码')) {
         res.status(400).json(result);
       } else {
