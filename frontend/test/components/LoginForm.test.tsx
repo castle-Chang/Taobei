@@ -70,7 +70,10 @@ describe('LoginForm', () => {
       expect(fetch).toHaveBeenCalledWith('/api/auth/send-verification-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: '13800138000' })
+        body: JSON.stringify({ 
+          phoneNumber: '13800138000',
+          pageType: 'login'
+        })
       });
     });
   });

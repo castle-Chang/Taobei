@@ -43,7 +43,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onNaviga
       const response = await fetch('/api/auth/send-verification-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber })
+        body: JSON.stringify({ 
+          phoneNumber,
+          pageType: 'register'  // 指定为注册页面
+        })
       });
 
       const data = await response.json();

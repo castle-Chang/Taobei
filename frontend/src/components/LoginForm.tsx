@@ -44,7 +44,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onNavigateToRegis
       const response = await fetch('/api/auth/send-verification-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber })
+        body: JSON.stringify({ 
+          phoneNumber,
+          pageType: 'login'  // 指定为登录页面
+        })
       });
 
       const data = await response.json();
